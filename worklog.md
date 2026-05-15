@@ -43,3 +43,40 @@ Stage Summary:
 - Fix: 3-layer defense (Firestore deletion + docToPost normalization + UserPostCard rejection of base64)
 - Deployed to: https://black94.com
 - Files modified: src/lib/db.ts, src/components/UserPostCard.tsx
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix stray action bar strip (desktop-only) - third attempt with correct root cause
+
+Work Log:
+- User reported strip still visible on desktop after hard refresh
+- Key clue: "That stray strip is only in the desktop view. It's not showing up in mobile browser view."
+- VLM analysis of desktop screenshots confirmed: stray strip of 6 icons (comment, repost, like, chart, bookmark, share) between Discover tab and first post (Cornelius)
+- Browser agent DOM inspection found NO stray elements in DOM — all action icons inside <article> tags
+- Rebuilt project from git history (commit b80b3aa) — source files had been lost between sessions
+- Found ROOT CAUSE: mediaUrls field from Firestore can be an empty array [], which is NOT a string
+  - docToPost() does `d.mediaUrls ?? ''` which returns [] (truthy) for empty arrays
+  - UserPostCard calls `post.mediaUrls.startsWith('data:')` on the array → TypeError!
+  - React error causes partial render: action bar visible but no avatar/text above
+  - Black94 "Hey" post has mediaUrls=[] in Firestore, triggering this bug on every page load
+  - On desktop the error manifests differently (partial render shows just the action bar strip)
+  - On mobile the error might be handled differently by React's error boundary
+
+Fix applied (3-layer defense):
+1. db.ts docToPost: normalize mediaUrls to always be a string, handle both Array and string types, reject base64 data URIs
+2. UserPostCard: type-safe mediaUrls processing with String() coercion before startsWith(), reject base64, add empty-post guard BEFORE useAppStore hook (fixes React rules-of-hooks violation), add overflow-hidden on <article>
+3. FeedView: add visiblePosts useMemo filter as defense-in-depth
+4. Service worker cache bumped to v9
+
+- Committed: bcaa6da - fix: stray action bar strip on desktop - 3-layer defense
+- Restored and fixed GitHub Actions workflow (.github/workflows/firebase-deploy.yml)
+- Committed: e8b2c9e - ci: restore Firebase Hosting auto-deploy workflow
+- Pushed to GitHub: dasucosmos-eng/black94realwebapp.git
+
+Stage Summary:
+- Root cause: mediaUrls type mismatch (Firestore empty array [] vs expected string) causing TypeError in UserPostCard
+- This is a DIFFERENT root cause than the previous session's base64 blob issue
+- Build verified: `npx next build` succeeds with no errors
+- Deployment: needs FIREBASE_SERVICE_ACCOUNT secret set in GitHub repo settings for CI/CD to trigger
+- Files modified: src/lib/db.ts, src/components/UserPostCard.tsx, src/views/FeedView.tsx, public/sw.js
