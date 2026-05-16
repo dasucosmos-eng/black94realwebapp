@@ -80,3 +80,24 @@ Stage Summary:
 - Build verified: `npx next build` succeeds with no errors
 - Deployment: needs FIREBASE_SERVICE_ACCOUNT secret set in GitHub repo settings for CI/CD to trigger
 - Files modified: src/lib/db.ts, src/components/UserPostCard.tsx, src/views/FeedView.tsx, public/sw.js
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix desktop-only stray action bar strip on black94.com
+
+Work Log:
+- Analyzed UserPostCard.tsx, FeedView.tsx, page.tsx, Sidebar.tsx, MobileHeader.tsx for desktop-specific CSS
+- Identified root cause 1: FeedView.tsx line 366 `sticky top-[56px]` — designed for mobile's 56px header, but on desktop the header is `md:hidden`, so tabs incorrectly stick 56px from top
+- Identified root cause 2: UserPostCard.tsx line 379 action bar `max-w-[440px]` — on desktop with 600px container, this makes the action bar ~128px narrower than the text content above, visually detaching it
+- Applied fix 1: Changed `sticky top-[56px]` to `sticky top-[56px] md:top-0` in FeedView.tsx
+- Applied fix 2: Changed `max-w-[440px]` to `max-w-[440px] md:max-w-full` in UserPostCard.tsx
+- Bumped service worker cache from v9 to v10
+- Built Next.js static export successfully
+- Deployed to Firebase Hosting black94-com site
+- Pushed changes to GitHub (dasucosmos-eng/black94realwebapp)
+
+Stage Summary:
+- Stray strip fix deployed to https://black94-com.web.app (serves black94.com)
+- Two CSS fixes: responsive sticky position + responsive action bar width
+- SW cache bumped to v10 for cache busting
+- FIREBASE_SERVICE_ACCOUNT GitHub secret NOT set — service account JSON not found at expected path
