@@ -1,30 +1,63 @@
 ---
-Task ID: 1
-Agent: Main Agent
-Task: Full code audit of black94-app
+Task ID: stories-icon-change
+Agent: main
+Task: Change stories tab icon from film to add-circle
 
 Work Log:
-- Read and analyzed all critical source files (20+ files)
-- AnonymousChatScreen.tsx (1558 lines) — verified error handling, paywall, timer
-- src/lib/api.ts — verified signInWithGoogle, fetchFeed, fetchChatList, fetchUserProfile, comments
-- src/stores/app.ts — verified safeUser() defaults
-- src/lib/firebase.ts — verified API key loading, auth persistence
-- src/lib/payments.ts — verified badge clearing, 15% commission
-- src/utils/datetime.ts — verified tsToMillis()
-- src/utils/crypto.ts — verified sha256()
-- src/services/notificationEngine.ts — verified polling, createNotification
-- src/components/CommentSheet.tsx — verified Firestore persistence
-- src/screens/CheckoutScreen.tsx — verified no demo products
-- src/screens/FeedScreen.tsx — verified logo, tabs, batch author fetch
-- src/navigation/AppNavigator.tsx — verified tab icons, dark theme
-- src/screens/ChatListScreen.tsx — verified batch user fetch
-- src/screens/ProfileScreen.tsx — verified fetchUserProfile
-- src/screens/UserProfileScreen.tsx — verified fetchUserProfile
-- App.js — verified font loading, auth restoration
-- app.json — verified firebaseApiKey config
+- Changed Stories tab icon from film/film-outline to add-circle/add-circle-outline
 
 Stage Summary:
-- Found and fixed 1 bug: api.ts signInWithGoogle() variable ordering (existingData used before declaration)
-- Committed as bc89684, pushed to main
-- 18 items verified as actually done
-- Profile loading and anon chat issues are likely Firestore Security Rules (server-side) issues, not client code bugs
+- Stories tab now uses add-circle icon (like Instagram stories)
+
+---
+Task ID: createpost-fix-notifications-enhance
+Agent: main
+Task: Fix CreatePost camera + filters, enhance notification engine
+
+Work Log:
+- Made camera button functional in CreatePostScreen (lazy-imports launchCameraAsync from expo-image-picker)
+- Added maxWidth: 1200 to both image picker and camera launch for image optimization
+- Added 6 image filter options (Original, Warm, Cool, Vintage, B&W, Vivid) with colored overlay previews
+- Filter UI: horizontal scrollable row of circular previews below the image grid, each showing the first image with the filter overlay applied
+- Selected filter overlay is rendered over each image in the grid as a View with the overlay backgroundColor
+- Updated GIF button alert to "GIF support coming in the next update! Stay tuned."
+- Verified notification polling already starts in app store setUser() — no change needed there
+- Expanded CreateNotificationParams type with story_view, milestone, suggestion
+- Added createEngagementNotification() function for system-generated milestone/suggestion notifications
+
+Stage Summary:
+- CreatePostScreen camera is now fully functional with real camera capture
+- Image picker and camera both use maxWidth: 1200 for reduced file sizes
+- Visual filter previews available for all 6 filter presets
+- Notification engine supports engagement notifications (milestones, suggestions)
+
+---
+Task ID: userprofile-layout-rewrite
+Agent: main
+Task: Rewrite UserProfileScreen layout to match ProfileScreen (full PostCard style)
+
+Work Log:
+- Added imports: react-native-svg (Svg, Path, Polyline), Share, Dimensions, memo, useRef
+- Added api imports: toggleLike, toggleBookmark, toggleRepost
+- Added timeAgo from utils
+- Copied from ProfileScreen: RepostIcon SVG component, HighlightedCaption component, formatCount helper, ProfilePostCard memo component (with all action buttons: comment, repost, like, views, bookmark, share), profileCardStyles StyleSheet, PostGrid component, RepliesList component, LikedPostsGrid component
+- Added Reply interface
+- Added state: likedPosts, replies, tabLoading, interactionsChecked
+- Changed tab type from 'posts'|'replies' to 'posts'|'replies'|'likes'
+- Added interaction handlers: handleLike, handleBookmark, handleRepost, handleComment, handleDelete
+- Added batch interaction checking after posts load (liked/bookmarked/reposted in chunks of 30)
+- Added replies tab useEffect (loads post_comments where authorId matches, with parent post data)
+- Added likes tab useEffect (loads post_likes where userId matches, fetches full post data)
+- Replaced compact grid rendering with PostGrid component using ProfilePostCard
+- Added tab loading spinner
+- Updated tab bar styling to match ProfileScreen (black bg, white indicator bar)
+- Kept existing: cover image with gradient overlay + back button, follow toggle, message navigation, ad banner, pull-to-refresh
+
+Stage Summary:
+- UserProfileScreen now renders posts as full PostCard components (same as ProfileScreen and FeedScreen)
+- Posts show avatar, display name, username, time ago, caption with hashtag/mention highlighting, full-size media, and complete action bar (comment, repost, like, views, bookmark, share)
+- Three tabs: Posts, Replies, Likes — all functional
+- Replies tab loads user's comments with parent post context and media
+- Likes tab loads posts the user has liked
+- Double-tap to like with heart overlay animation
+- Interaction states (liked/bookmarked/reposted) are batch-checked on load
