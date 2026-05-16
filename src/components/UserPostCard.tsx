@@ -376,7 +376,7 @@ export function UserPostCard({
             )}
 
             {/* Action bar */}
-            <div className="flex items-center justify-between max-w-[440px] -ml-2" style={{ marginTop: '12px' }}>
+            <div className="flex items-center justify-between max-w-[440px] md:max-w-full -ml-2" style={{ marginTop: '12px' }}>
               {/* Reply / Comment */}
               <button
                 className="flex items-center gap-1 group"

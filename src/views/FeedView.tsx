@@ -363,7 +363,7 @@ export function FeedView() {
   return (
     <div className="mx-auto max-w-[600px]">
       {/* Tabs */}
-      <div className="sticky top-[56px] z-20 bg-[#000000] border-b border-white/[0.06]">
+      <div className="sticky top-[56px] md:top-0 z-20 bg-[#000000] border-b border-white/[0.06]">
         <div className="flex">
           {TABS.map((tab) => (
             <button
