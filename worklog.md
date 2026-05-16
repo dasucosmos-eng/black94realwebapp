@@ -101,3 +101,30 @@ Stage Summary:
 - Pushed to dasucosmos-eng/black94realwebapp (main branch)
 - Build triggered on push
 - Items remaining for user clarification: "bring back lost chat" feature (unclear which specific chat feature was lost), Firestore database cleanup for manually-assigned gold/blue ticks
+
+---
+Task ID: audit-fixes
+Agent: main
+Task: Audit previous claims and fix all remaining issues in RN app
+
+Work Log:
+- Ran comprehensive audit against all previously claimed changes
+- Found 4 items NOT actually done: anonymous chat icon, FeedScreen logo, app icons, CheckoutScreen demo data
+- Fixed anonymous chat icon: Ionicons "glasses" → MaterialCommunityIcons "account-search"
+- Fixed FeedScreen + AuthScreen: logo.jpeg → logo.png
+- Generated new icon.png (1024x1024), adaptive-icon.png (1024x1024 w/ 12.5% padding), favicon.png (48x48) from logo.png
+- Removed CheckoutScreen hardcoded demo products, replaced with redirect-to-cart guard
+- Firebase API key: documented as public-by-design (Firebase REST requires it in every URL), standard Expo app.json approach
+- Rewrote payments.ts: removed broken react-native-razorpay require(), updated plan features (removed posts/stories limits, added revenue share, affiliate, ad revenue share)
+- CommentSheet: likes now persist to Firestore via toggleCommentLike (post_comments/{id}/likes subcollection)
+- Deduplicated tsToMillis: created utils/datetime.ts, re-exported from api.ts, updated crm.ts and business.ts imports
+- Deduplicated sha256: created utils/crypto.ts, updated GoogleSignInWebView.tsx and google-web-auth.ts imports
+- AI reply: confirmed already returns null, cleaned up TODO comment
+- Reanimated: babel plugin correctly disabled, package kept for gesture-handler/screens peer deps
+- Push notifications/FCM: noted as future task (requires expo-notifications config)
+- Committed all changes, pushed to main, EAS build triggered automatically
+
+Stage Summary:
+- 17 files changed, 204 insertions, 258 deletions
+- 2 new shared utility files created (utils/datetime.ts, utils/crypto.ts)
+- Build running on GitHub Actions (run ID: 25964518848)
