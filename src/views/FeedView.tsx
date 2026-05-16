@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/stores/app'
 import { fetchFeedPosts, docToPost } from '@/lib/db'
