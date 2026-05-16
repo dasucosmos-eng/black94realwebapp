@@ -81,23 +81,23 @@ Stage Summary:
 - Deployment: needs FIREBASE_SERVICE_ACCOUNT secret set in GitHub repo settings for CI/CD to trigger
 - Files modified: src/lib/db.ts, src/components/UserPostCard.tsx, src/views/FeedView.tsx, public/sw.js
 ---
-Task ID: 1
+Task ID: rn-app-overhaul
 Agent: Main Agent
-Task: Fix desktop-only stray action bar strip on black94.com
+Task: Comprehensive React Native app overhaul (continuation from previous session)
 
 Work Log:
-- Analyzed UserPostCard.tsx, FeedView.tsx, page.tsx, Sidebar.tsx, MobileHeader.tsx for desktop-specific CSS
-- Identified root cause 1: FeedView.tsx line 366 `sticky top-[56px]` — designed for mobile's 56px header, but on desktop the header is `md:hidden`, so tabs incorrectly stick 56px from top
-- Identified root cause 2: UserPostCard.tsx line 379 action bar `max-w-[440px]` — on desktop with 600px container, this makes the action bar ~128px narrower than the text content above, visually detaching it
-- Applied fix 1: Changed `sticky top-[56px]` to `sticky top-[56px] md:top-0` in FeedView.tsx
-- Applied fix 2: Changed `max-w-[440px]` to `max-w-[440px] md:max-w-full` in UserPostCard.tsx
-- Bumped service worker cache from v9 to v10
-- Built Next.js static export successfully
-- Deployed to Firebase Hosting black94-com site
-- Pushed changes to GitHub (dasucosmos-eng/black94realwebapp)
+- Moved Firebase API key from hardcoded in firebase.ts to app.json extra field, reading via Constants.expoConfig?.extra?.firebaseApiKey
+- Fixed missing `name` prop on Avatar components across 12 screens: AppNavigator, ChatListScreen, ChatRoomScreen (2 locations), NotificationsScreen, UserProfileScreen, ShareProfileScreen, StorefrontScreen, SalaryScreen, AffiliatesScreen, SettingsScreen, ProductDetailScreen
+- Removed fake AI reply logic from generateAIReply() in api.ts — replaced with null stub + TODO for real AI integration
+- Redesigned PremiumDashboardScreen via subagent: removed Posts/Stories per day from FEATURES table and usage stats, added Creator Revenue Share, Early Access, Ad Revenue Share, Anonymous Chat, Store/CRM/AI features, added disclaimer text, renamed Affiliate Program
+- Added paid-only gate to AnonymousChatScreen via subagent: checks user subscription before allowing chat, shows paywall UI with upgrade button for free users
+- Confirmed StoriesScreen already has Instagram-like design (small circle highlights, gradient borders, story viewer with progress bars)
+- Confirmed AnonymousChatScreen already uses real Firestore data (no mocks)
+- Confirmed FeedScreen, ChatListScreen, ChatRoomScreen all use real Firestore data
+- Gold/blue tick issue: badge assignment in auth flow already defaults to empty string; cleanup of manually-assigned badges requires Firestore admin operation
 
 Stage Summary:
-- Stray strip fix deployed to https://black94-com.web.app (serves black94.com)
-- Two CSS fixes: responsive sticky position + responsive action bar width
-- SW cache bumped to v10 for cache busting
-- FIREBASE_SERVICE_ACCOUNT GitHub secret NOT set — service account JSON not found at expected path
+- 16 files modified, 191 insertions, 130 deletions
+- Pushed to dasucosmos-eng/black94realwebapp (main branch)
+- Build triggered on push
+- Items remaining for user clarification: "bring back lost chat" feature (unclear which specific chat feature was lost), Firestore database cleanup for manually-assigned gold/blue ticks
