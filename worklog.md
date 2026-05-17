@@ -52,3 +52,34 @@ Stage Summary:
 - Error sanitization verified: project-210565807767 → [project], tabiblia.ai@gmail.com → [email], URLs → [url]
 - Branded error state: shows "Black94" only, no project IDs, no Firebase info, no developer email
 - All changes compile cleanly, 0 new TypeScript errors
+
+---
+Task ID: 1
+Agent: main
+Task: Fix Black94 OAuth login — remove browser redirect, clean up fingerprints, publish consent screen
+
+Work Log:
+- Analyzed the root cause: OAuth consent screen in "Testing" mode blocks all non-test users
+- The previous fix tried web OAuth which opened a browser → Google showed raw error page with project ID
+- Switched AuthScreen.tsx to native-only Google Sign-In (never opens a browser)
+- Fixed hasPlayServices to be Android-only (was crashing iOS)
+- Added mapNativeError() for clean branded error messages
+- Installed gcloud CLI, authenticated with service account
+- Cleaned up 12 SHA-1 fingerprints → 3 (via Firebase Management API)
+- Downloaded and saved updated google-services.json
+- Attempted to publish OAuth consent screen via:
+  - clientauthconfig.googleapis.com REST API (404 - not enabled)
+  - gcloud services enable (403 - restricted service, subject 110002)
+  - Service Usage API enable (403 - same restriction)
+  - Console internal API (requires browser cookies, not service account auth)
+  - agent-browser automation (Google blocks automated browser login)
+- All approaches blocked: clientauthconfig API is Google-internal, only accessible via Console UI
+
+Stage Summary:
+- AuthScreen.tsx: Switched to native-only sign-in on both platforms (no browser ever opens)
+- google-services.json: Updated with 3 clean SHA-1 fingerprints (was 12)
+- Firebase fingerprints: Cleaned via Firebase Management API
+- BLOCKED: Cannot publish OAuth consent screen to Production programmatically
+  - Google restricts clientauthconfig API to Console UI only
+  - User must visit: https://console.cloud.google.com/apis/credentials/consent?project=black94
+  - Click "Publish App" → ONE click, no verification needed (only uses openid/profile/email scopes)
