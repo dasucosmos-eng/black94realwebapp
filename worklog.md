@@ -111,3 +111,25 @@ Stage Summary:
 - App-side code is verified correct and should work once consent screen is published
 - NEED: Service account key file from user to run diagnostic and fix
 - Script ready: /home/z/my-project/download/fix_google_oauth.py
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Download existing APK build and deliver to user
+
+Work Log:
+- Discovered the git remote was pointing to black94realwebapp, not black94-app
+- The OAuth fixes were already committed to both repos (from previous session)
+- The last successful build on black94-app (run #25985990097) already contains all OAuth fixes
+- Downloaded artifact #7040992487 (38MB zip) containing app-release.apk (84MB)
+- Extracted APK to /home/z/my-project/download/app-release.apk
+- Verified all 4 key fixes present in AuthScreen.tsx:
+  1. Native Google Sign-In ONLY on both platforms
+  2. sanitizeErrorMessage() strips project IDs/emails
+  3. mapNativeError() for clean branded error messages
+  4. hasPlayServices guarded for Android-only
+
+Stage Summary:
+- APK downloaded: /home/z/my-project/download/app-release.apk (84MB)
+- This APK has native-only Google Sign-In — browser never opens, Google error page can't appear
+- User needs to install this APK to get the fix
