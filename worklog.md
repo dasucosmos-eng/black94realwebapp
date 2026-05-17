@@ -1,17 +1,25 @@
 ---
 Task ID: 1
-Agent: main
-Task: Locate black94-app React Native project directory
+Agent: Main Agent
+Task: Fix OAuth Error 400 invalid_request — Google policy non-compliance
 
 Work Log:
-- Searched for app.json and React Native projects across /home
-- Found correct project at /home/z/black94-app/
-- Verified git remote: dasucosmos-eng/black94-app.git
-- Confirmed: Expo SDK ~54, RN 0.81.5, TypeScript, 56 screens
-- Confirmed: google-services.json exists with correct project_id "black94"
-- Confirmed: OAuth client ID 210565807767-jtedotfd6hqn8cn31meuk2cfp2dkm88o.apps.googleusercontent.com
+- Read all 4 OAuth-related files: AuthScreen.tsx, LoginScreen.tsx, GoogleSignInWebView.tsx, google-web-auth.ts
+- Read google-services.json, app.json, firebase.ts, api.ts for full context
+- Identified root cause: Android used custom scheme redirect URI (black94://auth) with Web OAuth client
+- Google OAuth 2.0 policy only accepts http(s) redirect URIs for Web clients — custom schemes are rejected
+- This caused Error 400: invalid_request with policy non-compliance message
+- Changed google-web-auth.ts: getRedirectUri() now returns HTTPS URL for ALL platforms
+- Added sanitizeErrorMessage() to strip project IDs, emails, Firebase URLs from error messages
+- Updated GoogleSignInWebView.tsx: Added error page interception in onShouldStartLoadWithRequest
+- Updated AuthScreen.tsx: Added branded error state with Try Again button and Contact Support link
+- Updated app.json: Added HTTPS intent filter for Android App Links (autoVerify)
+- Verified TypeScript compilation passes (3 pre-existing errors in App.js/ChatListScreen.tsx, none in changed files)
+- Verified all 5 client ID references are consistent
 
 Stage Summary:
-- Project directory: /home/z/black94-app/
-- This is the CORRECT project (not /home/z/my-project/black94-app/)
-- Ready to begin actual work on the project
+- google-web-auth.ts: Changed redirect from black94://auth (Android) to https://black94.firebaseapp.com/__/auth/handler (all platforms)
+- GoogleSignInWebView.tsx: Added error interception + sanitized error messages
+- AuthScreen.tsx: Added branded error state (no project IDs, no Firebase info ever shown)
+- app.json: Added HTTPS intent filter with autoVerify for Android App Links
+- All changes compile cleanly
