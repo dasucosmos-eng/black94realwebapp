@@ -341,6 +341,11 @@ export default function Black94App() {
   useEffect(() => {
     let dead = false
     let unsub: (() => void) | null = null
+    // FIX: Remember if we already restored a user from localStorage cache.
+    // When Firestore is unreachable (offline), createUserFromGoogle will throw.
+    // In that case, we must NOT kick the user to the login screen — the cached
+    // session is still valid via Firebase Auth persistence.
+    const hadCachedUser = typeof window !== 'undefined' && !!localStorage.getItem(USER_CACHE_KEY)
 
     const handleUser = async (fbUser: FirebaseUser) => {
       if (dead) return
@@ -365,7 +370,15 @@ export default function Black94App() {
       } catch (err) {
         console.error('[Auth] createUserFromGoogle failed:', err)
         setBusyRef.current(false)
-        setScreenRef.current('login')
+        // FIX: Only show login if there was NO cached user. If we had a cached
+        // user, keep the app running with cached data — Firestore is likely just
+        // unreachable (offline). The auth listener will re-fire with fresh data
+        // once connectivity is restored.
+        if (!hadCachedUser) {
+          setScreenRef.current('login')
+        } else {
+          console.warn('[Auth] Firestore unreachable — keeping cached session alive')
+        }
       }
     }
 
@@ -375,9 +388,28 @@ export default function Black94App() {
         if (dead) return
         if (fbUser) handleUser(fbUser)
         else {
-          console.log('[Auth] No user — showing login')
-          try { localStorage.removeItem(USER_CACHE_KEY) } catch {}
-          setScreenRef.current('login')
+          // FIX: Don't immediately nuke cache and show login. Firebase auth
+          // may fire null briefly during initialization even for returning users.
+          // If we had a cached session, debounce to avoid flicker.
+          if (hadCachedUser) {
+            console.log('[Auth] No Firebase user yet, but cache exists — waiting...')
+            const timer = setTimeout(() => {
+              if (dead) return
+              // After delay, check one more time if a user appeared
+              if (!auth.currentUser) {
+                console.log('[Auth] Confirmed no user after debounce — showing login')
+                try { localStorage.removeItem(USER_CACHE_KEY) } catch {}
+                setScreenRef.current('login')
+              }
+            }, 1500)
+            // Store timer so we can clean up on unmount
+            const origUnsub = unsub
+            unsub = () => { clearTimeout(timer); origUnsub?.() }
+          } else {
+            console.log('[Auth] No user — showing login')
+            try { localStorage.removeItem(USER_CACHE_KEY) } catch {}
+            setScreenRef.current('login')
+          }
         }
       })
     })
