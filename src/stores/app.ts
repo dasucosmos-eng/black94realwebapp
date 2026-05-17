@@ -210,9 +210,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     set({ token })
   },
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    set({ user })
+    // CRITICAL: Always persist user to localStorage for offline recovery.
+    // Without this, profile changes (avatar, name, etc.) are lost on offline reload.
+    if (typeof window !== 'undefined') {
+      try {
+        if (user) {
+          localStorage.setItem('black94_user_cache', JSON.stringify(user))
+        } else {
+          localStorage.removeItem('black94_user_cache')
+        }
+      } catch {}
+    }
+  },
   logout: () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('black94_token')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('black94_token')
+      localStorage.removeItem('black94_user_cache')
+    }
     set({ token: null, user: null, currentView: 'landing' })
   },
 
