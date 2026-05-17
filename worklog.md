@@ -61,3 +61,40 @@ Stage Summary:
 - Total files modified: 16 (api.ts, crm.ts, app.ts, business.ts, + 12 screens)
 - Zero bare tsToMillis calls remain in the codebase
 - All changes pushed to origin/main
+
+---
+Task ID: 3
+Agent: Main Agent + 3 subagents
+Task: Comprehensive bug sweep and Play Store readiness fixes
+
+Work Log:
+- Ran full codebase audit via 2 parallel subagents (bug sweep + Play Store config audit)
+- Bug sweep: checked 10 critical files for crash-prone patterns, navigation issues, security
+- Play Store audit: checked AndroidManifest, app.json, build.gradle, signing config, versions
+
+CRITICAL fixes applied:
+1. ChatRoomScreen: Added null guard for chat state — render was accessing chat.otherUser
+   when chat could be null (before async fetch completes), causing TypeError crash
+2. CartScreen: navigation.navigate('Shop') -> 'Storefront' (Shop screen not registered)
+3. SettingsScreen: fallback navigation 'Profile' -> 'ProfileSelf' (Profile expects userId)
+4. CreatePostScreen: Added auth().currentUser null check before image upload
+   (prevented uploads to path 'posts/undefined/...')
+
+Security hardening:
+5. firebase.ts: Gated ALL 29 console.log/warn/error calls behind __DEV__
+6. firebase.ts: Scrubbed API key from Firestore logs (log path only, not full URL)
+7. storage.ts: Removed empty Bearer token placeholder
+
+Play Store compliance:
+8. app.json: Removed unused READ/WRITE_EXTERNAL_STORAGE permissions
+
+Memory leak fix:
+9. EditProfileScreen: Added useEffect cleanup for username debounce timer
+
+Stage Summary:
+- 4 CRITICAL crash bugs fixed
+- 3 security hardening fixes (29 console calls gated, API key scrubbed, Bearer token fixed)
+- 1 Play Store compliance fix (permissions cleanup)
+- 1 memory leak fix
+- 24 files changed across 2 commits pushed to origin/main
+- Total bugs fixed this session: 40+ (tsToMillis: 30, crash: 4, security: 3, compliance: 1, memory: 1, + 5 from previous session)
