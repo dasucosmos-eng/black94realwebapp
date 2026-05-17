@@ -21,3 +21,24 @@ Stage Summary:
 - Verified no mock data exists in stories (already clean)
 - Build passes with zero errors
 
+---
+Task ID: 1
+Agent: main
+Task: Audit fixes and trigger build
+
+Work Log:
+- Explored full project structure: Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui web app (NOT React Native as previously assumed)
+- Read src/stores/app.ts — confirmed user cache to localStorage works, but found offline auth listener bug
+- Read src/app/page.tsx — found TWO bugs in the auth listener (lines 340-386)
+- Read src/lib/db.ts — understood createUserFromGoogle() behavior offline (Firestore getDoc fails)
+- Read src/components/ComposeDialog.tsx — confirmed image/GIF/emoji/poll support already exists
+- Read src/views/StoriesView.tsx + src/lib/story-data.ts — confirmed no mock data exists
+- Read src/views/ProfileView.tsx — confirmed profile enrichment logic
+- Fixed offline session persistence bug in src/app/page.tsx auth listener
+- Committed and pushed to main (20e877d)
+
+Stage Summary:
+- FIXED: Offline username/profile name display bug — auth listener no longer kicks user to login when Firestore is unreachable
+- VERIFIED: Post composer already supports images, GIFs, emojis, and polls
+- VERIFIED: Stories page has no mock data — loads from Firestore
+- Build triggered via git push to main
