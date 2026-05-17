@@ -83,3 +83,31 @@ Stage Summary:
   - Google restricts clientauthconfig API to Console UI only
   - User must visit: https://console.cloud.google.com/apis/credentials/consent?project=black94
   - Click "Publish App" → ONE click, no verification needed (only uses openid/profile/email scopes)
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Continue OAuth fix — session context recovered, diagnostic script created
+
+Work Log:
+- Session context was compressed, lost service account key from previous session
+- Verified gcloud CLI installed and working (v568.0.0)
+- Verified Firebase CLI installed (v15.18.0) but not authenticated
+- Confirmed Google Cloud OAuth2 API endpoints return 404 without proper auth
+- Verified app code is correct:
+  - AuthScreen.tsx: Native-only Google Sign-In on both platforms
+  - WEB_CLIENT_ID consistent across all files: 210565807767-jtedotfd6hqn8cn31meuk2cfp2dkm88o
+  - iOS URL scheme correct: com.googleusercontent.apps.210565807767-jtedotfd6hqn8cn31meuk2cfp2dkm88o
+  - google-services.json has 3 SHA-1 fingerprints for Android app
+  - mapNativeError() sanitizes all error messages
+- Created comprehensive diagnostic/fix script: /home/z/my-project/download/fix_google_oauth.py
+  - Accepts service account key JSON file as input
+  - Lists OAuth client IDs, checks consent screen status
+  - Checks IAM permissions, gets SHA-1 fingerprints
+  - Attempts to publish consent screen via multiple API endpoints
+- Installed Python dependencies: pyjwt, google-auth, requests
+
+Stage Summary:
+- App-side code is verified correct and should work once consent screen is published
+- NEED: Service account key file from user to run diagnostic and fix
+- Script ready: /home/z/my-project/download/fix_google_oauth.py
