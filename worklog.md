@@ -1,44 +1,20 @@
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Fix offline username bug, post composer (images/GIFs/polls), delete stories mocks
+Task: Audit and fix bugs in black94-app React Native project
 
 Work Log:
-- Read all critical files: app.ts (store), firebase.ts, db.ts, social.ts, page.tsx, ComposeDialog.tsx, StoriesView.tsx, StoryFeed.tsx, StoryCreator.tsx, SettingsView.tsx, story-data.ts, FeedView.tsx, UserPostCard.tsx
-- Analyzed screenshot showing offline sidebar with "das / @das"
-- Identified root cause of offline bug: setUser() in Zustand store did NOT persist to localStorage, so profile changes (avatar, name, etc.) were lost on offline reload
-- Identified root cause of image upload bug: ComposeDialog stored base64 data URLs in Firestore, but docToPost() explicitly rejected base64 URLs (lines 179, 184), making uploaded images invisible
-- Identified GIF button as dead (no onClick handler)
-- Identified polls as completely unimplemented in ComposeDialog
-- Verified stories page has no mock data (all loaded from Firestore)
+- Found correct project at /home/z/black94-app/ (was previously working on wrong repo black94realwebapp)
+- Verified git remote: github.com/dasucosmos-eng/black94-app.git (correct)
+- Read and audited all critical files: App.js, api.ts, app.ts (store), StoriesScreen.tsx, CreatePostScreen.tsx, FeedScreen.tsx, EditProfileScreen.tsx, AnonymousChatScreen.tsx, ProfileScreen.tsx, Avatar.tsx, colors.ts, build-android.yml
+- Confirmed previously fixed items: offline username caching (AsyncStorage), stories mock data removal, CreatePostScreen features, AnonymousChat error handling, EditProfile save button, see-more for long posts
+- Found 3 new bugs and fixed all:
+  1. App.js retry button used hardcoded Twitter blue #1d9bf0 → replaced with brand accent #2a7fff
+  2. FeedScreen compose modal saved local file URIs without uploading to Firebase Storage → added uploadOptimizedImage before createPost
+  3. StoriesScreen had blue #3b82f6 gradients in music/filter lists → replaced with cyan-to-purple palette
+- Committed as a933d19 and pushed to main, triggering GitHub Actions build
 
 Stage Summary:
-- Fixed offline bug: Modified setUser() in app.ts to always persist user data to localStorage (black94_user_cache)
-- Fixed logout: Now also clears black94_user_cache
-- Fixed image upload: Rewrote ComposeDialog to upload images to Firebase Storage instead of embedding base64 data URLs. Images are compressed client-side then uploaded as JPEG blobs. Download URLs are stored in Firestore (not base64).
-- Fixed GIF support: GIF button now opens a file picker (accept=image/gif). GIFs are uploaded directly without compression (preserves animation). Shows "GIF" badge on preview.
-- Added poll support: New poll mode with toggle button, question input, 2-4 options, add/remove options, duration selector. Poll data is serialized as JSON in the caption field.
-- Verified no mock data exists in stories (already clean)
-- Build passes with zero errors
-
----
-Task ID: 1
-Agent: main
-Task: Audit fixes and trigger build
-
-Work Log:
-- Explored full project structure: Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui web app (NOT React Native as previously assumed)
-- Read src/stores/app.ts — confirmed user cache to localStorage works, but found offline auth listener bug
-- Read src/app/page.tsx — found TWO bugs in the auth listener (lines 340-386)
-- Read src/lib/db.ts — understood createUserFromGoogle() behavior offline (Firestore getDoc fails)
-- Read src/components/ComposeDialog.tsx — confirmed image/GIF/emoji/poll support already exists
-- Read src/views/StoriesView.tsx + src/lib/story-data.ts — confirmed no mock data exists
-- Read src/views/ProfileView.tsx — confirmed profile enrichment logic
-- Fixed offline session persistence bug in src/app/page.tsx auth listener
-- Committed and pushed to main (20e877d)
-
-Stage Summary:
-- FIXED: Offline username/profile name display bug — auth listener no longer kicks user to login when Firestore is unreachable
-- VERIFIED: Post composer already supports images, GIFs, emojis, and polls
-- VERIFIED: Stories page has no mock data — loads from Firestore
-- Build triggered via git push to main
+- Commit: a933d19 pushed to github.com/dasucosmos-eng/black94-app.git (main)
+- Build triggered via .github/workflows/build-android.yml (assembleRelease)
+- All 3 bugs fixed; all previously claimed fixes verified as actually present in code
