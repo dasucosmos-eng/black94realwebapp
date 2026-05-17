@@ -65,3 +65,4 @@ keystore-base64.txt
 
 # Firebase cache
 .firebase/
+download/
