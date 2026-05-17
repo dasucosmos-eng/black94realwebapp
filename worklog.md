@@ -35,3 +35,29 @@ Stage Summary:
 - Also modified by subagent: src/screens/NotificationsScreen.tsx, src/screens/FeedScreen.tsx, src/screens/BookmarksScreen.tsx (tsToMillis wrapping)
 - All changes are defensive — they prevent crashes and show user-friendly messages instead of raw errors
 - No changes to navigation, firebase config, or OAuth flow
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Audit all previous fixes and fix remaining bugs
+
+Work Log:
+- Read worklog from previous session to understand all 5 fixes
+- Audited Fix 1 (tsToMillis crash): Found stores/app.ts line 48 still had a bare tsToMillis call without try/catch — CRITICAL because safeUser() is called on every setUser(), including during auth restore
+- Audited Fix 2 (Follow button): Verified both ProfileScreen and UserProfileScreen have `color: '#000000'` on followBtnText ✓
+- Audited Fix 3 (Tab sizing): Verified both screens have `height: 36`, `fontSize: 14` ✓
+- Audited Fix 4 (Comments): Verified fetchPostComments throws errors, both CommentSheet and PostCommentsScreen catch and show Retry UI ✓
+- Audited Fix 5 (Error boundary): Verified sanitizeError strips toMillis, toDate, seconds, nanoseconds, project IDs, emails, URLs ✓
+- Found ~30 additional bare tsToMillis() calls across the codebase that could crash the app
+- Fixed stores/app.ts safeUser() createdAt (was the last critical bare call)
+- Fixed api.ts core functions: fetchFeed, fetchChatList (2 calls), fetchMessages, hybridSearch (2 calls), searchUsers, getCart, submitFactCheckClaim (2 calls), fetchFactCheckClaims (2 calls), getCRMLeadRecommendations
+- Delegated fixing 28 bare calls across 14 screen/utility files to subagent
+- All fixes committed and pushed to origin/main
+
+Stage Summary:
+- All 5 previous fixes verified as correct
+- 1 critical remaining bug found and fixed (stores/app.ts bare tsToMillis)
+- ~30 additional bare tsToMillis calls wrapped with try/catch IIFEs
+- Total files modified: 16 (api.ts, crm.ts, app.ts, business.ts, + 12 screens)
+- Zero bare tsToMillis calls remain in the codebase
+- All changes pushed to origin/main
