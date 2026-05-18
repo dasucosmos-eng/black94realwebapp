@@ -98,3 +98,28 @@ Stage Summary:
 - 1 memory leak fix
 - 24 files changed across 2 commits pushed to origin/main
 - Total bugs fixed this session: 40+ (tsToMillis: 30, crash: 4, security: 3, compliance: 1, memory: 1, + 5 from previous session)
+
+---
+Task ID: 1
+Agent: main
+Task: Fix media upload bugs — feed images, story images, GIF button, polls
+
+Work Log:
+- Investigated all media upload code paths across the codebase
+- Found root cause: ComposeDialog saved base64 to Firestore, but docToPost() and UserPostCard explicitly stripped all data: URLs on read
+- Found StoryUploadSheet was dead code (never imported) — no UI for image stories
+- Found GIF button had zero onClick handler
+- Created src/lib/upload.ts: Firebase Storage upload utility
+- Updated ComposeDialog: uploads to Firebase Storage instead of base64, GIF button now functional
+- Removed base64 rejection in docToPost() (db.ts) and UserPostCard.tsx
+- Added 'image' format to StoryCreator with full photo/GIF upload UI
+- Added ImageStory component to StoryViewer for image story playback
+- Updated StoryUploadSheet to use Firebase Storage
+- Added 'image' to StoryFormat type and STORY_FORMATS in story-data.ts
+- Resolved merge conflicts during rebase with remote (which had poll support added separately)
+- Pushed to origin/main
+
+Stage Summary:
+- 8 files changed: upload.ts (new), ComposeDialog.tsx, StoryUploadSheet.tsx, UserPostCard.tsx, StoryCreator.tsx, StoryViewer.tsx, db.ts, story-data.ts
+- Commit: a5ceeec "fix: image/GIF uploads, story photos, and GIF button"
+- All 4 bug categories addressed: feed images, story images, GIF button, and poll/image upload errors
