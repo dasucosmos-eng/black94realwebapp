@@ -141,8 +141,6 @@ export function UserPostCard({
     // Safety: ensure mediaUrls is a string (Firestore may return arrays)
     const raw = String(post.mediaUrls)
     if (!raw.trim()) return []
-    // Reject raw base64 blobs — they cause rendering issues
-    if (raw.startsWith('data:')) return []
     // Treat as comma-separated URL list
     return raw.split(',').map((u) => u.trim()).filter(Boolean)
   }, [post.mediaUrls])

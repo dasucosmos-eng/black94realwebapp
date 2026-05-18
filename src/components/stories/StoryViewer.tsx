@@ -580,6 +580,46 @@ function FeedStory({ card, group }: { card: StoryCard; group: StoryGroup }) {
   )
 }
 
+function ImageStory({ card }: { card: StoryCard }) {
+  const imageUrl = card.mediaUrl || ''
+
+  if (!imageUrl) return null
+
+  // Determine if it's a GIF
+  const isGif = imageUrl.toLowerCase().includes('.gif') || imageUrl.startsWith('data:image/gif')
+
+  return (
+    <motion.div
+      key={card.id}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, y: -30 }}
+      transition={{ duration: 0.3 }}
+      className="absolute inset-0 flex flex-col items-center justify-center"
+    >
+      {/* Full-screen image */}
+      <img
+        src={imageUrl}
+        alt=""
+        className="w-full h-full object-cover"
+        draggable={false}
+      />
+
+      {/* Caption overlay at bottom */}
+      {card.content && (
+        <div className="absolute bottom-0 left-0 right-0 p-6 pb-10 bg-gradient-to-t from-black/70 to-transparent">
+          <p
+            className="text-white text-base sm:text-lg font-medium text-center"
+            style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}
+          >
+            {card.content}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Creator Profile Overlay
 // ---------------------------------------------------------------------------
@@ -1150,6 +1190,8 @@ export default function StoryViewer({ groups, initialGroupIndex, onClose, onNavi
         return <VoiceStory card={currentStory} isPaused={isPaused} />
       case 'poll':
         return <PollStory card={currentStory} />
+      case 'image':
+        return <ImageStory card={currentStory} />
       case 'thread':
         return <ThreadStory card={currentStory} group={currentGroup} />
       case 'cricket':

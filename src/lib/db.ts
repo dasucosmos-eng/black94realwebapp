@@ -175,13 +175,9 @@ export function docToPost(docSnap: DocumentSnapshot<DocumentData>): Post {
       if (!raw) return '';
       if (Array.isArray(raw)) {
         const filtered = raw.map(String).filter(Boolean);
-        // Reject raw base64 blobs — must be URLs
-        if (filtered.length > 0 && filtered[0].startsWith('data:')) return '';
         return filtered.join(',');
       }
       const s = String(raw).trim();
-      // Reject raw base64 blobs stored as strings
-      if (s.startsWith('data:')) return '';
       return s;
     })(),
     factCheck: d.factCheck ?? '',

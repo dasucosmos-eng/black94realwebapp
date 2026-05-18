@@ -6,7 +6,7 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type StoryFormat = 'text' | 'voice' | 'thread' | 'poll' | 'festival' | 'cricket' | 'feed'
+export type StoryFormat = 'text' | 'voice' | 'thread' | 'poll' | 'image' | 'festival' | 'cricket' | 'feed'
 export type StoryAudience = 'everyone' | 'followers' | 'close_friends' | 'subscribers'
 export type StoryExpiry = '6h' | '24h' | '72h' | 'permanent'
 export type Language = 'hi' | 'en' | 'te' | 'ta' | 'bn' | 'mr' | 'kn' | 'ml' | 'gu'
@@ -227,6 +227,7 @@ export const STORY_FORMATS: { value: StoryFormat; label: string; icon: string; d
   { value: 'voice', label: 'Voice', icon: '🎙️', description: 'Record a voice note story' },
   { value: 'thread', label: 'Thread', icon: '🧵', description: 'Convert a thread into a story series' },
   { value: 'poll', label: 'Poll', icon: '📊', description: 'Ask your audience a question' },
+  { value: 'image', label: 'Photo', icon: '📷', description: 'Share a photo or GIF as a story' },
   { value: 'festival', label: 'Festival', icon: '🎉', description: 'Share festival greetings with templates' },
   { value: 'cricket', label: 'Cricket', icon: '🏏', description: 'Live scores and match updates' },
   { value: 'feed', label: 'Feed', icon: '📰', description: 'Embed a post or article as a story' },

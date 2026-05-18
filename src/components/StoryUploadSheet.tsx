@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useAppStore } from '@/stores/app'
 import { createStory } from '@/lib/stories-db'
 import { IMAGE_FILTERS, type ImageFilter } from '@/lib/image-filters'
+import { compressAndUpload } from '@/lib/upload'
 import { toast } from 'sonner'
 
 interface StoryUploadSheetProps {
@@ -85,21 +86,21 @@ export function StoryUploadSheet({ open, onClose, onStoryUploaded }: StoryUpload
     if (!selectedFile || !user || uploading) return
     setUploading(true)
 
-    // Step 1: Compress
-    let base64: string
+    // Step 1: Compress & upload to Firebase Storage
+    let downloadUrl: string
     try {
       setStep('compressing')
-      base64 = await compressStoryImage(selectedFile, selectedFilter.css)
-      console.log('[StoryUpload] Compressed →', Math.round(base64.length / 1024), 'KB')
+      downloadUrl = await compressAndUpload(selectedFile, 'stories')
+      console.log('[StoryUpload] Uploaded →', downloadUrl)
     } catch (err) {
-      console.error('[StoryUpload] Compression FAILED:', err)
+      console.error('[StoryUpload] Upload FAILED:', err)
       setUploading(false)
       setStep('idle')
       toast.error('Failed to process image. Try a different photo.')
       return
     }
 
-    // Step 2: Write to Firestore (direct, no Storage)
+    // Step 2: Write to Firestore with the Storage URL
     try {
       setStep('uploading')
       await createStory({
@@ -108,12 +109,12 @@ export function StoryUploadSheet({ open, onClose, onStoryUploaded }: StoryUpload
         displayName: user.displayName || 'You',
         profileImage: user.profileImage || '',
         verified: user.isVerified,
-        mediaUrl: base64,
+        mediaUrl: downloadUrl,
         caption: caption.trim(),
       })
-      console.log('[StoryUpload] Upload ✅')
+      console.log('[StoryUpload] Firestore write ✅')
     } catch (err) {
-      console.error('[StoryUpload] Upload FAILED:', err)
+      console.error('[StoryUpload] Firestore write FAILED:', err)
       setUploading(false)
       setStep('idle')
       toast.error(`Upload failed: ${err instanceof Error ? err.message : String(err)}`)
@@ -129,9 +130,9 @@ export function StoryUploadSheet({ open, onClose, onStoryUploaded }: StoryUpload
   }, [selectedFile, selectedFilter, caption, user, uploading, onStoryUploaded, onClose])
 
   const statusText = step === 'compressing'
-    ? 'Compressing…'
+    ? 'Processing…'
     : step === 'uploading'
-      ? 'Sharing…'
+      ? 'Saving…'
       : 'Share Story'
 
   return (

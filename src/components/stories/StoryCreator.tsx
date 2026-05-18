@@ -8,6 +8,7 @@ import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
 import { useAppStore } from '@/stores/app'
 import { createStory } from '@/lib/db'
+import { compressAndUpload } from '@/lib/upload'
 import { storage } from '@/lib/firebase'
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 
@@ -30,6 +31,7 @@ const FORMAT_OPTIONS: { value: StoryFormat; icon: string; label: string; desc: s
   { value: 'voice', icon: '🎙️', label: 'Voice', desc: 'Record up to 60s' },
   { value: 'thread', icon: '🧵', label: 'Thread', desc: 'Import your threads' },
   { value: 'poll', icon: '📊', label: 'Poll', desc: 'Ask your audience' },
+  { value: 'image', icon: '📷', label: 'Photo', desc: 'Share a photo or GIF' },
   { value: 'festival', icon: '🎉', label: 'Festival', desc: 'Celebration cards' },
   { value: 'cricket', icon: '🏏', label: 'Cricket', desc: 'Live match updates' },
   { value: 'feed', icon: '📰', label: 'Feed', desc: 'Share a post URL' },
@@ -238,6 +240,13 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
   const [feedUrl, setFeedUrl] = useState('')
   const [feedCaption, setFeedCaption] = useState('')
 
+  // Image format state
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+  const [imageCaption, setImageCaption] = useState('')
+  const [imageUploading, setImageUploading] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
   // ---- Poll preview (shows equal distribution before voting) ----
   const previewPercentages = useMemo(() => {
     const filled = standalonePollOptions.filter((o) => o.text.trim()).length
@@ -334,6 +343,10 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
       setCricketCommentary('')
       setFeedUrl('')
       setFeedCaption('')
+      setImageFile(null)
+      setImagePreviewUrl(null)
+      setImageCaption('')
+      setImageUploading(false)
       // Clean up voice recording refs
       audioBlobRef.current = null
       audioChunksRef.current = []
@@ -362,6 +375,8 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
         return threadTitle.trim().length > 0 && threadCards.some((c) => c.trim().length > 0)
       case 'poll':
         return standalonePollQuestion.trim().length > 0 && standalonePollOptions.some((o) => o.text.trim().length > 0)
+      case 'image':
+        return imageFile !== null || !!imagePreviewUrl
       case 'festival':
         return selectedFestival !== null && festivalMessage.trim().length > 0
       case 'cricket':
@@ -418,6 +433,12 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
           pollOptions: standalonePollOptions
             .filter((o) => o.text.trim())
             .map((o) => ({ ...o, percentage: 0, votes: 0 })),
+        }
+      case 'image':
+        return {
+          ...base,
+          content: imageCaption || '',
+          mediaUrl: imagePreviewUrl || '',
         }
       case 'festival':
         return {
@@ -543,6 +564,17 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
         }
         if (format === 'feed') {
           firestoreData.mediaUrl = feedUrl
+        }
+        if (format === 'image' && imageFile) {
+          try {
+            setImageUploading(true)
+            const imageUrl = await compressAndUpload(imageFile, 'stories')
+            firestoreData.mediaUrl = imageUrl
+          } catch (imgErr) {
+            console.error('Image upload failed:', imgErr)
+          } finally {
+            setImageUploading(false)
+          }
         }
 
         await createStory(user.id, firestoreData, {
@@ -1138,6 +1170,96 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
     </div>
   )
 
+  // ---- IMAGE ----
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image or GIF file')
+      return
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('File must be under 20MB')
+      return
+    }
+    setImageFile(file)
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setImagePreviewUrl(URL.createObjectURL(file))
+  }, [imagePreviewUrl])
+
+  const removeImage = useCallback(() => {
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setImageFile(null)
+    setImagePreviewUrl(null)
+    setImageCaption('')
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }, [imagePreviewUrl])
+
+  const renderImageCanvas = () => (
+    <div className="pt-2 pb-20 flex flex-col gap-4">
+      {!imagePreviewUrl ? (
+        <button
+          onClick={() => imageInputRef.current?.click()}
+          className="w-full rounded-2xl border border-dashed border-white/[0.15] bg-white/[0.03]
+                     hover:border-white/[0.3] hover:bg-white/[0.06] transition-all cursor-pointer
+                     flex flex-col items-center justify-center gap-3 py-16"
+        >
+          <div className="w-14 h-14 rounded-full bg-white/[0.08] flex items-center justify-center">
+            <svg className="w-7 h-7 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <rect x="3" y="3" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <p className="text-white/40 text-sm">Tap to select a photo or GIF</p>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+        </button>
+      ) : (
+        <div className="space-y-3">
+          <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ maxWidth: '240px', aspectRatio: '9/16' }}>
+            <img
+              src={imagePreviewUrl}
+              alt="Preview"
+              className="w-full h-full object-cover"
+              draggable={false}
+            />
+            <button
+              onClick={removeImage}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm
+                         flex items-center justify-center hover:bg-black/80 transition-colors"
+            >
+              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+          <button onClick={removeImage} className="text-[13px] text-[#00f0ff] font-medium hover:underline self-start">
+            Change photo
+          </button>
+        </div>
+      )}
+      <div>
+        <textarea
+          value={imageCaption}
+          onChange={(e) => setImageCaption(e.target.value)}
+          placeholder="Add a caption..."
+          maxLength={200}
+          rows={2}
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3
+                     text-white text-sm placeholder:text-white/25 resize-none outline-none
+                     focus:border-[#00f0ff]/40 transition-colors"
+        />
+        <p className="text-[11px] text-white/20 mt-1 text-right">{imageCaption.length}/200</p>
+      </div>
+    </div>
+  )
+
   // ---- FESTIVAL ----
   const renderFestivalCanvas = () => (
     <div className="pt-2 pb-20 flex flex-col gap-4">
@@ -1642,6 +1764,7 @@ export default function StoryCreator({ open, onClose, onStoryPublished }: StoryC
             {format === 'voice' && renderVoiceCanvas()}
             {format === 'thread' && renderThreadCanvas()}
             {format === 'poll' && renderPollCanvas()}
+            {format === 'image' && renderImageCanvas()}
             {format === 'festival' && renderFestivalCanvas()}
             {format === 'cricket' && renderCricketCanvas()}
             {format === 'feed' && renderFeedCanvas()}
