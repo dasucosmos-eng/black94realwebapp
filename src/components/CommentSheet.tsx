@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { cn } from '@/lib/utils'
-import { addPostComment, fetchPostComments } from '@/lib/social'
+import { addPostComment, fetchPostComments, toggleCommentRepost, toggleCommentBookmark } from '@/lib/social'
 import { toast } from 'sonner'
 import { PAvatar, VerifiedBadge } from './PAvatar'
 import { useAppStore } from '@/stores/app'
@@ -248,12 +248,24 @@ export function CommentSheet({
   }, [likeMap])
 
   const handleRepostComment = useCallback((commentId: string) => {
-    setRepostMap((prev) => ({ ...prev, [commentId]: !prev[commentId] }))
-  }, [])
+    if (!userId) return
+    const wasReposted = repostMap[commentId] || false
+    setRepostMap((prev) => ({ ...prev, [commentId]: !wasReposted }))
+    // Persist to Firestore (fire-and-forget)
+    toggleCommentRepost(commentId, userId, wasReposted).catch(() => {
+      setRepostMap((prev) => ({ ...prev, [commentId]: wasReposted }))
+    })
+  }, [userId, repostMap])
 
   const handleBookmarkComment = useCallback((commentId: string) => {
-    setBookmarkMap((prev) => ({ ...prev, [commentId]: !prev[commentId] }))
-  }, [])
+    if (!userId) return
+    const wasBookmarked = bookmarkMap[commentId] || false
+    setBookmarkMap((prev) => ({ ...prev, [commentId]: !wasBookmarked }))
+    // Persist to Firestore (fire-and-forget)
+    toggleCommentBookmark(commentId, userId, wasBookmarked).catch(() => {
+      setBookmarkMap((prev) => ({ ...prev, [commentId]: wasBookmarked }))
+    })
+  }, [userId, bookmarkMap])
 
   // Post reaction handlers
   const handleLike = useCallback(() => {

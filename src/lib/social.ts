@@ -441,6 +441,67 @@ export async function checkPostInteractions(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   COMMENT INTERACTIONS — reposts & bookmarks on individual comments
+   Uses subcollections under post_comments/{commentId}/...
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Toggles a repost on a comment. Stores in post_comments/{commentId}/reposts/{userId}.
+ * Suggested Firestore rules:
+ *   match /post_comments/{commentId}/reposts/{userId} {
+ *     allow read, create, delete: if request.auth != null && request.auth.uid == userId;
+ *   }
+ */
+export async function toggleCommentRepost(commentId: string, userId: string, currentlyReposted: boolean): Promise<boolean> {
+  const repostRef = doc(db, COMMENTS_COL, commentId, 'reposts', userId);
+
+  try {
+    if (currentlyReposted) {
+      await deleteDoc(repostRef);
+      try {
+        await updateDoc(doc(db, COMMENTS_COL, commentId), { repostCount: increment(-1) });
+      } catch { /* non-critical */ }
+      return false;
+    } else {
+      await setDoc(repostRef, { userId, repostedAt: serverTimestamp() });
+      try {
+        await updateDoc(doc(db, COMMENTS_COL, commentId), { repostCount: increment(1) });
+      } catch { /* non-critical */ }
+      return true;
+    }
+  } catch (err) {
+    const info = getErrorInfo(err);
+    console.error(`[social] toggleCommentRepost FAILED: code=${info.code}, msg=${info.message}`);
+    return currentlyReposted; // Return unchanged on error
+  }
+}
+
+/**
+ * Toggles a bookmark on a comment. Stores in post_comments/{commentId}/bookmarks/{userId}.
+ * Suggested Firestore rules:
+ *   match /post_comments/{commentId}/bookmarks/{userId} {
+ *     allow read, create, delete: if request.auth != null && request.auth.uid == userId;
+ *   }
+ */
+export async function toggleCommentBookmark(commentId: string, userId: string, currentlyBookmarked: boolean): Promise<boolean> {
+  const bookmarkRef = doc(db, COMMENTS_COL, commentId, 'bookmarks', userId);
+
+  try {
+    if (currentlyBookmarked) {
+      await deleteDoc(bookmarkRef);
+      return false;
+    } else {
+      await setDoc(bookmarkRef, { userId, bookmarkedAt: serverTimestamp() });
+      return true;
+    }
+  } catch (err) {
+    const info = getErrorInfo(err);
+    console.error(`[social] toggleCommentBookmark FAILED: code=${info.code}, msg=${info.message}`);
+    return currentlyBookmarked; // Return unchanged on error
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    USER POSTS — no composite index required (sort client-side)
    ═══════════════════════════════════════════════════════════════════════════ */
 
